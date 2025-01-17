@@ -30,6 +30,7 @@ return new class extends Migration
 
 
             
+            
             $table->integer('starting_date');
             $table->integer('active_time');
             $table->json('count')->nullable();
