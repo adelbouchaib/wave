@@ -28,6 +28,8 @@ return new class extends Migration
             $table->text('creative_url');
             $table->string('thumbnail_url');
 
+
+            
             $table->integer('starting_date');
             $table->integer('active_time');
             $table->json('count')->nullable();
