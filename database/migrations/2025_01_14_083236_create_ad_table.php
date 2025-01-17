@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('headline');
             $table->string('cta');
             $table->string('url');
+            
 
             $table->string('creative_id');
             $table->string('creative_type');
