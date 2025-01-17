@@ -23,15 +23,11 @@ return new class extends Migration
             $table->string('cta');
             $table->string('url');
 
-            
             $table->string('creative_id');
             $table->string('creative_type');
             $table->text('creative_url');
             $table->string('thumbnail_url');
 
-
-            
-            
             $table->integer('starting_date');
             $table->integer('active_time');
             $table->json('count')->nullable();
