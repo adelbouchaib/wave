@@ -23,7 +23,6 @@ return new class extends Migration
             $table->string('cta');
             $table->string('url');
             
-
             $table->string('creative_id');
             $table->string('creative_type');
             $table->text('creative_url');
