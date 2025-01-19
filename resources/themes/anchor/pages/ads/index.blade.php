@@ -42,7 +42,7 @@
             }
         
             if ($this->media) {
-                $query->where('creative_type', '=', (int)$this->media);
+                $query->where('creative_type', '=', $this->media);
             }
         
             if ($this->start_date) {
@@ -56,11 +56,15 @@
             }
         
             if ($this->min_ads) {
-                $query->where('today_count', '>=', $this->min_ads);
+                $query->where('collation_count', '>=', $this->min_ads);
             }
         
             if ($this->max_ads) {
-                $query->where('today_count', '<=', $this->max_ads);
+                $query->where('collation_count', '<=', $this->max_ads);
+            }
+
+            if ($this->cta_type) {
+                $query->where('cta', '=', $this->cta_type);
             }
         
             // Fetch only the number of ads based on the current amount
@@ -91,6 +95,7 @@
 ?>
 
 <x-layouts.app>
+
     @volt('ads')
         <x-app.container class="max-w-full lg:pt-0 ">
             <div class="">
@@ -115,8 +120,8 @@
                     <label for="status" class="text-stone-600 text-sm font-medium">Media type</label>
                     <select wire:model.defer="media" id="status" class="mt-2 block w-full rounded-md border border-gray-200 px-2 py-2 shadow-sm outline-none focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                         <option value="" disabled selected>Media type</option>
-                        <option value="1">Image</option>
-                        <option value="2">Video</option>
+                        <option value="IMAGE">Image</option>
+                        <option value="VIDEO">Video</option>
                     </select>
                 </div>
 
@@ -125,7 +130,7 @@
                     <select  wire:model.defer="cta_type" id="status" class="mt-2 block w-full rounded-md border border-gray-200 px-2 py-2 shadow-sm outline-none focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
                         <option value="" disabled selected>CTA type</option>
                         <option value="shop now">Shop now</option>
-                        <option value="message now">Message now</option>
+                        <option value="send message">Send message</option>
                     </select>
                 </div>
             </div>
@@ -239,19 +244,24 @@
 
                         </div>
                         <p class="text-sm text-gray-500">Total active time: 
+                        
                             @php
-                           
-                            if ( $ad->active_time >= 86400) {
-                                $days = intdiv($ad->active_time, 86400); // 86400 seconds in a day
-                                echo $days . ' days' ;
-                            }else{
-                                $carbon = \Carbon\Carbon::createFromTimestamp(0)->addSeconds($ad->active_time)->format('H');
-                                echo $carbon . ' hrs';
-                            }
+                            // Get the current time
+                            $currentTime = \Carbon\Carbon::now();
+
+                            // Get the starting date from the timestamp
+                            $startingDate = \Carbon\Carbon::createFromTimestamp($ad->starting_date);
+
+                            // Calculate the difference between current time and starting date
+                            $diff = $currentTime->diffForHumans($startingDate);
+
+                            $cleanDiff = str_replace('after', '', $diff);
+                
+                            echo $cleanDiff;
                             @endphp
 
                         </p>
-                        <p class="text-lg font-semibold mb-2 text-blue-500">{{$ad->today_count}} active ads</p>
+                        <p class="text-lg font-semibold mb-2 text-blue-500">{{$ad->collation_count}} active ads</p>
 
                         <a href="{{ route('ads.create', ['id' => $ad->id]) }}">
                         <button class=" text-md bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 w-full mb-2 rounded-md">See ad details</button>
@@ -259,23 +269,47 @@
 
                         <div class="bg-gray-100 rounded-lg">
                             <div class="flex items-center mb-2">
-                                <div>
-                                    <h3 class="text-md font-semibold">{{$ad->page_name}}</h3>
-                                </div>
+                                    <img src="{{$ad->page_picture}}" alt="Image" class="w-8 h-8 mr-2 rounded-full object-cover"> 
+                                    <h3 class="text-md font-semibold">
+                                        @php
+                                        $decodedString = json_decode('"' . $ad->page_name . '"');
+                                        echo $decodedString;
+                                        @endphp
+                                    </h3>
                             </div>
                             <div x-data="{ isTruncated: true }">
-                                <p x-bind:class="{ 'line-clamp-3': isTruncated }" x-on:click="isTruncated = !isTruncated" class="text-sm text-gray-700 cursor-pointer">
-                                    {{ $ad->copy }}
+                                @php
+                                $firstChar = mb_substr($ad->copy, 0, 1);
+                                $isArabic = preg_match('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}]/u', $firstChar);
+
+                                @endphp
+                                <p x-bind:class="{ 'line-clamp-3': isTruncated }" style="{{ $isArabic ? 'direction:rtl' : 'direction:ltr' }}"  x-on:click="isTruncated = !isTruncated" class="text-xs text-gray-700 cursor-pointer">
+                                    <!-- {{ $ad->copy }} -->
+                                    @php
+                                    $inputString = nl2br(e($ad->copy));
+                                    $cleanedString = preg_replace('/(\?){2,}/', '', $inputString); // Replaces consecutive ?? or more with a single ?
+                                    echo $cleanedString;
+                                    @endphp
                                 </p>
                             </div>
                         </div>
 
-                        <div class="flex justify-center items-center mb-4 mt-4">
-                        <video class="" width="150" height="150" controls>
-                            <source src="{{$ad->creative_url}}" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
+                     
+                        <div style="height: 250px;" class="flex items-center justify-center mb-4 mt-4">
+                        @if ($ad->creative_type == "IMAGE")
+                            <div class="flex justify-center items-center">
+                                <img src="{{ $ad->creative_url }}" alt="Ad Image"  class=" object-cover"  style="max-height: 250px; width: auto;">
+                            </div>
+                        @elseif ($ad->creative_type == "VIDEO")
+                            <div class="flex justify-center items-center">
+                                <video class="" width="150" height="150" style="max-height: 250px; width: auto;" controls >
+                                    <source src="{{ $ad->creative_url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        @endif
                         </div>
+
 
 
                        
@@ -284,12 +318,21 @@
                                 <!-- <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->headline}}</p>
                                 <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->description}} ...</p> -->
                                 <div style="width: 100%; overflow: hidden;">
-                                    <p class="text-sm text-gray-500" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">{{$ad->headline}}</p>
+                                    <p class="text-sm text-gray-500" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
+                                    @if($ad->headline == '')
+                                        @php
+                                        $decodedString = json_decode('"' . $ad->page_name . '"');
+                                        echo $decodedString; 
+                                        @endphp
+                                    @else
+                                        {{ $ad->headline }}
+                                    @endif
+                                    </p>
                                     <p class="text-sm text-gray-500" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">{{$ad->description}}</p>
                                 </div>
                                 <div>
-                                <a href="{{$ad->url}}" target="_blank">
-                                <button class="w-full bg-gray-200 text-xs hover:bg-gray-300 text-gray-700 font-medium py-2 px-2 rounded-md"  style="white-space: nowrap;">Order now</button>
+                                <a href="{{ empty($ad->url) ? $ad->page_url : $ad->url}}" target="_blank">
+                                <button class="w-full bg-gray-200 text-xs hover:bg-gray-300 text-gray-700 font-medium py-2 px-2 rounded-md"  style="white-space: nowrap;">{{$ad->cta}}</button>
                                 </a>
 
                                 

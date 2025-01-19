@@ -27,8 +27,12 @@
 
         public function mount($ad)
         {
-          $data = Ad::find($ad)->pluck('count')->toArray();
-          $this->jsonData = $data;
+
+        $ads = Ad::find($ad->id); // Fetch a single record
+        $this->jsonData = $ads ? $ads->count : null; // Access the count attribute  
+
+          // $data = Ad::find($ad)->pluck('count')->toArray();
+          // $this->jsonData = $data;
         
             $this->specific_ad = $ad;
         }
@@ -69,12 +73,19 @@
             <!-- Image Section -->
   <div class="flex-2 relative">
       <div class="flex justify-center items-center rounded-lg border" style="width: 300px; height: 300px;">
-        <video 
-            class="w-full h-full rounded-md" 
-            controls>
-            <source src="https://video.xx.fbcdn.net/v/t42.1790-2/472970839_1258996325215598_240301483610512581_n.?_nc_cat=106&ccb=1-7&_nc_sid=c53f8f&_nc_ohc=yX4gbwQymCQQ7kNvgGZFfFi&_nc_zt=28&_nc_ht=video.falg3-2.fna&_nc_gid=AY_MgQEWhFWyP5KDpCX69Mf&oh=00_AYDwnyXBpcnRL_tIF0LaIlqJdLRM7JWUVIFr-n75bPA6vA&oe=678ADF17" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+                        @if ($ad->creative_type == "IMAGE" )
+                            <div class="flex justify-center items-center mb-4 mt-4">
+                                <img src="{{ $ad->creative_url }}" alt="Ad Image" class="w-150 h-150 object-cover">
+                            </div>
+                        @elseif ($ad->creative_type == "VIDEO")
+                            <div class="flex justify-center items-center mb-4 mt-4">
+                                <video class="" width="150" height="150" controls>
+                                    <source src="{{ $ad->creative_url }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                        @endif
+       
       </div>
   </div>
 
@@ -98,8 +109,9 @@
         href="{{$ad->url}}"
         class="text-blue-500 underline hover:text-blue-700"
         target="_blank"
-        >{{$ad->url}}</a
-      >
+        style="word-wrap: break-word; word-break: break-all;"
+        >{{$ad->url}}
+        </a>
 
     </div>
       
@@ -157,30 +169,22 @@
 <script>
   const ctx = document.getElementById('myChart');
   
-  const data = {!! json_encode($jsonData) !!}; // Data from the server
-  console.log(data);
-  const innerArrayString = JSON.parse(data[0]);
-  const parsedData = innerArrayString.map(item => JSON.parse(item));
-console.log(parsedData);
+  const data = {!! json_encode($jsonData) !!};
 
+  let validJsonString = `[${data}]`;  // This will now look like: '[{"date":"2025-01-18","count":"4"},{"date":"2025-01-18","count":"4"}]'
+  
+  const parsedData = JSON.parse(validJsonString);
 
-
-    // Parse the stringified JSON array into an actual array
-    // const parsedData = JSON.parse(data[0]); // Assuming your data is wrapped in an array
-
-    // Extract the numbers (counts) and dates (labels)
     const counts = parsedData.map(item => item.count); // Get only the 'number' field
     const labels = parsedData.map(item => item.date); // Get the 'date' field
 
-     // Get the last number from the counts array
+    // Get the last number from the counts array
     const lastDate = labels[labels.length - 1];
     document.getElementById('lastDate').innerText = lastDate;
-    
-    // const specificIndex = labels.indexOf('2025-01-10');
-    // const correspondingCount = counts[specificIndex];
      
-     const firstDate = labels[0];
+    const firstDate = labels[0];
     document.getElementById('firstDate').innerText = firstDate;
+
 
 
   new Chart(ctx, {
