@@ -22,6 +22,15 @@
         public $amount = 9; // Number of ads to load at a time
         public $ads = []; // Current ads loaded
         public $filters = []; // Array to store filters
+
+        public $id;
+
+        public function goToAdDetails($id)
+        {
+            return redirect()->to('/ads/ad-details/' . $id);
+        }
+
+
         
         public function mount()
         {
@@ -241,7 +250,6 @@
                     <div class="bg-gray-100 rounded-lg p-4">
                         <div class="flex justify-between items-center bg-gray-100 rounded-lg" style="width: 100%; overflow: hidden;">
                         <p class="text-sm text-gray-500">Started running on: {{ \Carbon\Carbon::createFromTimestamp($ad->starting_date)->toDateString() }}</p>
-
                         </div>
                         <p class="text-sm text-gray-500">Total active time: 
                         
@@ -263,9 +271,10 @@
                         </p>
                         <p class="text-lg font-semibold mb-2 text-blue-500">{{$ad->collation_count}} active ads</p>
 
-                        <a href="{{ route('ads.create', ['id' => $ad->id]) }}">
-                        <button class=" text-md bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 w-full mb-2 rounded-md">See ad details</button>
-                        </a>
+
+                        <button wire:click="goToAdDetails({{ $ad->library_id }})" class="text-md bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 w-full mb-2 rounded-md">
+                            See ad details
+                        </button>
 
                         <div class="bg-gray-100 rounded-lg">
                             <div class="flex items-center mb-2">
@@ -278,57 +287,56 @@
                                     </h3>
                             </div>
                             <div x-data="{ isTruncated: true }">
-                                @php
-                                $firstChar = mb_substr($ad->copy, 0, 1);
-                                $isArabic = preg_match('/[\x{0600}-\x{06FF}\x{0750}-\x{077F}\x{08A0}-\x{08FF}]/u', $firstChar);
-
-                                @endphp
-                                <p x-bind:class="{ 'line-clamp-3': isTruncated }" style="{{ $isArabic ? 'direction:rtl' : 'direction:ltr' }}"  x-on:click="isTruncated = !isTruncated" class="text-xs text-gray-700 cursor-pointer">
+        
+                                <p x-bind:class="{ 'line-clamp-3': isTruncated }" style="{{ isTextArabic($ad->copy) ? 'direction:rtl' : 'direction:ltr' }}"  x-on:click="isTruncated = !isTruncated" class="text-sm text-gray-700 cursor-pointer">
                                     <!-- {{ $ad->copy }} -->
-                                    @php
-                                    $inputString = nl2br(e($ad->copy));
-                                    $cleanedString = preg_replace('/(\?){2,}/', '', $inputString); // Replaces consecutive ?? or more with a single ?
-                                    echo $cleanedString;
-                                    @endphp
+                        
+                                    {!! cleanArabicText($ad->copy) !!}
                                 </p>
                             </div>
                         </div>
 
                      
                         <div style="height: 250px;" class="flex items-center justify-center mb-4 mt-4">
-                        @if ($ad->creative_type == "IMAGE")
-                            <div class="flex justify-center items-center">
-                                <img src="{{ $ad->creative_url }}" alt="Ad Image"  class=" object-cover"  style="max-height: 250px; width: auto;">
-                            </div>
-                        @elseif ($ad->creative_type == "VIDEO")
-                            <div class="flex justify-center items-center">
-                                <video class="" width="150" height="150" style="max-height: 250px; width: auto;" controls >
-                                    <source src="{{ $ad->creative_url }}" type="video/mp4">
-                                    Your browser does not support the video tag.
-                                </video>
-                            </div>
-                        @endif
+                            @if ($ad->creative_type == "IMAGE")
+                                <div class="flex justify-center items-center">
+                                    <img src="{{ $ad->creative_url }}" alt="Ad Image"  class=" object-cover"  style="max-height: 250px; width: auto;">
+                                </div>
+                            @elseif ($ad->creative_type == "VIDEO")
+                                <div class="flex justify-center items-center">
+                                    <video class="" width="150" height="150" style="max-height: 250px; width: auto;" controls >
+                                        <source src="{{ $ad->creative_url }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            @endif
                         </div>
 
 
 
                        
 
-                        <div class="flex justify-between items-center bg-gray-100 rounded-lg" style="width: 100%; overflow: hidden;">
+                        <div class="flex justify-between items-center bg-gray-100 rounded-lg gap-2" style="width: 100%; overflow: hidden;">
                                 <!-- <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->headline}}</p>
-                                <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->description}} ...</p> -->
+                                <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->description}}</p> -->
                                 <div style="width: 100%; overflow: hidden;">
-                                    <p class="text-sm text-gray-500" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
-                                    @if($ad->headline == '')
-                                        @php
-                                        $decodedString = json_decode('"' . $ad->page_name . '"');
-                                        echo $decodedString; 
-                                        @endphp
-                                    @else
-                                        {{ $ad->headline }}
-                                    @endif
+                                    <p class="text-xs text-gray-500" 
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; 
+                                    {{ isTextArabic($ad->headline) ? 'direction: rtl; text-align: right;' : 'direction: ltr;' }}">@if($ad->headline == '')
+                                            @php
+                                            $decodedString = json_decode('"' . $ad->page_name . '"');
+                                            echo $decodedString; 
+                                            @endphp
+                                            @else
+                                            {!! cleanArabicText($ad->headline) !!}
+                                            @endif
                                     </p>
-                                    <p class="text-sm text-gray-500" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">{{$ad->description}}</p>
+                                    <p class="text-xs text-gray-500" 
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; 
+                                    {{ isTextArabic($ad->description) ? 'direction: rtl; text-align: right;' : 'direction: ltr;' }}">                                         
+                                        {!! cleanArabicText($ad->description) !!}
+
+                                    </p>
                                 </div>
                                 <div>
                                 <a href="{{ empty($ad->url) ? $ad->page_url : $ad->url}}" target="_blank">

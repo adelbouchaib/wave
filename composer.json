@@ -24,6 +24,7 @@
         "laravel/ui": "^4.5",
         "livewire/livewire": "^3.0",
         "ralphjsmit/livewire-urls": "^1.4",
+        "socialiteproviders/google": "^4.1",
         "spatie/laravel-permission": "^6.4",
         "stripe/stripe-php": "^15.3",
         "tymon/jwt-auth": "@dev"
@@ -45,7 +46,10 @@
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/",
             "Wave\\": "wave/src/"
-        }
+        },
+        "files": [
+            "app/Helpers/helper.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {

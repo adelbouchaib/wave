@@ -1,6 +1,13 @@
 <?php
     use function Laravel\Folio\{name};
     name('home');
+    // Redirect if the current URL is `/`
+    if (request()->is('/')) {
+        header("Location: /login");
+        exit;
+    }
+
+
 ?>
 
 <x-layouts.marketing
@@ -11,7 +18,6 @@
         'type'          => 'website'
     ]"
 >
-        
         <x-marketing.sections.hero />
         
         <x-container class="py-12 border-t sm:py-24 border-zinc-200">

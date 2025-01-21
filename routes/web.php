@@ -18,5 +18,3 @@ use Wave\Facades\Wave;
 
 // Wave routes
 Wave::routes();
-
-Route::get('/ads/{id}', [App\Http\Controllers\AdController::class, 'create'])->name('ads.create');
