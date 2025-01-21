@@ -208,7 +208,6 @@
 @script
 <script>
   const ctx = document.getElementById('myChart');
-  
   const data = {!! json_encode($jsonData) !!};
 
   let validJsonString = `[${data}]`;  // This will now look like: '[{"date":"2025-01-18","count":"4"},{"date":"2025-01-18","count":"4"}]'
@@ -224,7 +223,6 @@
      
     const firstDate = labels[0];
     document.getElementById('firstDate').innerText = firstDate;
-
 
 
   new Chart(ctx, {

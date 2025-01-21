@@ -6,7 +6,7 @@
 @if(isset($seo->title))
     <title>{{ $seo->title }}</title>
 @else
-    <title>{{ setting('site.title', 'Laravel Wave') . ' - ' . setting('site.description', 'Spytool') }}</title>
+    <title>{{ setting('site.title', 'Spysouk') . ' - ' . setting('site.description', 'Spysouk') }}</title>
 @endif
 
 <meta charset="utf-8">

@@ -23,8 +23,8 @@ class HomeController extends Controller
 
         $seo = [
 
-            'title'         => setting('site.title', 'Laravel Wave'),
-            'description'   => setting('site.description', 'Software as a Service Starter Kit'),
+            'title'         => setting('site.title', 'Spysouk'),
+            'description'   => setting('site.description', 'Your product research tool'),
             'image'         => url('/og_image.png'),
             'type'          => 'website'
 

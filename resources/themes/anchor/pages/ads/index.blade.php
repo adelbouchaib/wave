@@ -40,7 +40,7 @@
         public function applyFilters()
         {
             // Base query with all filters
-            $query = Ad::query();
+            $query = Ad::query()->orderBy('starting_date', 'desc');;
         
             // Apply filters dynamically
             if ($this->search) {
@@ -252,7 +252,7 @@
                         <p class="text-sm text-gray-500">Started running on: {{ \Carbon\Carbon::createFromTimestamp($ad->starting_date)->toDateString() }}</p>
                         </div>
                         <p class="text-sm text-gray-500">Total active time: 
-                        
+
                             @php
                             // Get the current time
                             $currentTime = \Carbon\Carbon::now();
@@ -266,14 +266,49 @@
                             $cleanDiff = str_replace('after', '', $diff);
                 
                             echo $cleanDiff;
+                            
                             @endphp
+                
 
                         </p>
-                        <p class="text-lg font-semibold mb-2 text-blue-500">{{$ad->collation_count}} active ads</p>
+                        <div class ="flex">
+                            <p class="text-lg font-semibold mb-2 text-blue-500 whitespace-nowrap">{{$ad->collation_count}} active ads
+                            </p>
+                            <p class="text-sm font-semibold text-red-500 ml-4 mt-1">
+                                
+                                    @php
+                                    $countsData = '[' . $ad->count . ']'; // Wrap the data in square brackets to make it valid JSON
+                                    $countsData = json_decode($countsData, true); // Decode the JSON string from the 'count' column
+                                    
+                                    $today = \Carbon\Carbon::today()->toDateString();
+                                    $yesterday = \Carbon\Carbon::yesterday()->toDateString();
+                                    $firstData = collect($countsData)->firstWhere('date', $today);
+                                    $secondData = collect($countsData)->firstWhere('date', $yesterday);
+
+                                    if($firstData && $secondData){
+                                        $todayCount = (int)$firstData['count'];  // Ensure it's treated as an integer
+                                        $yesterdayCount = (int)$secondData['count'];  // Ensure it's treated as an integer
+                                        
+                                        if ($todayCount != $yesterdayCount) {
+                                            $difference = $todayCount-$yesterdayCount;
+                                            echo "(";
+                                            echo $difference >= 0 ? '+' : '' ;
+                                            echo $difference;
+                                            echo " compared to yesterday)";
+
+                                        }
+                                    }
+                                    @endphp
+
+                            </p>
+                         </div>
+                                 
+
+                       
 
 
                         <button wire:click="goToAdDetails({{ $ad->library_id }})" class="text-md bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 w-full mb-2 rounded-md">
-                            See ad details
+                            See creative details & Tracking
                         </button>
 
                         <div class="bg-gray-100 rounded-lg">

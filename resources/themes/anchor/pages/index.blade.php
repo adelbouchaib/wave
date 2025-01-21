@@ -12,7 +12,7 @@
 
 <x-layouts.marketing
     :seo="[
-        'title'         => setting('site.title', 'Laravel Wave'),
+        'title'         => setting('site.title', 'Spysouk'),
         'description'   => setting('site.description', 'Software as a Service Starter Kit'),
         'image'         => url('/og_image.png'),
         'type'          => 'website'
