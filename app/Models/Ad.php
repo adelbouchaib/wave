@@ -27,6 +27,12 @@ class Ad extends Model
         'start_date' => 'date',
     ];
 
+    public function users()
+{
+    return $this->belongsToMany(User::class, 'user_ad');
+}
+
+
 }
 
 ?>

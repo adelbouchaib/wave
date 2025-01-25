@@ -29,9 +29,14 @@
                     </div> -->
                 </div>
 
+
                 <div class="flex flex-col justify-start items-center px-4 space-y-1.5 w-full h-full text-slate-600 dark:text-zinc-400">
-                    <x-app.sidebar-link href="/ads" icon="phosphor-globe" :active="Request::is('ads')">Ads</x-app.sidebar-link>
+                    <x-app.sidebar-link href="/ads" icon="phosphor-house" :active="Request::is('ads')">Discovery</x-app.sidebar-link>
+                    <x-app.sidebar-dropdown text="Spyder" icon="phosphor-eye" id="projects_dropdown" :active="(Request::is('projects'))" :open="(Request::is('save') || Request::is('project_b') || Request::is('project_c')) ? '1' : '0'">
+                        <x-app.sidebar-link href="/save" icon="phosphor-bookmark" :active="(Request::is('save'))">Ads</x-app.sidebar-link>
+                    </x-app.sidebar-dropdown>
                 </div>
+
             </div>
 
             <div class="relative px-2.5 space-y-1.5 text-zinc-700 dark:text-zinc-400">

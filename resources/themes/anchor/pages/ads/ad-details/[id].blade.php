@@ -3,6 +3,8 @@
     use Livewire\Attributes\Validate;
     use App\Models\Ad;
     use Livewire\Volt\Component;
+    use Filament\Notifications\Notification;
+
     middleware('auth');
     name('wave.ads');
 
@@ -13,6 +15,48 @@
         public $specific_ad;
         public $ad;
         public $jsonData;
+
+        public function isTracked($adId)
+        {
+            $user = auth()->user();
+            return $user->ads()->where('ad_id', $adId)->exists();
+        }
+
+        public function addSave($id)
+        {
+            $user = auth()->user(); // Get the currently authenticated user
+            // // Check if the user has already tracked 10 ads
+            // if ($user->ads()->count() >= 10) {
+            //     Notification::make()
+            //     ->title('Limit Reached')
+            //     ->body('You can only track up to 10 ads.')
+            //     ->danger() // Style it as an error (red alert)
+            //     ->send();
+        
+            // return;
+            // }
+
+            // Add the ad to the user's tracked ads if the limit is not reached
+            $user->ads()->syncWithoutDetaching([$id]);
+
+            Notification::make()
+            ->title('Ad Tracked Successfully')
+            ->body('The ad has been added to your tracking list.')
+            ->success() // Style it as a success (green alert)
+            ->send();
+    
+            $ads = Ad::where('id', $id)->first(); // Fetch a single record
+            $adId = $ads->library_id;
+            return redirect()->to('/ads/ad-details/' . $adId);
+    
+        }
+        
+        
+                public function goToAdTrack($id)
+                {
+                    return redirect()->to('/ads/ad-track/' . $id);
+                }
+        
 
         
         public function mount($id)
@@ -63,102 +107,124 @@
                     />
             </div>
 
-<div class="flex flex-col md:flex-row bg-gray-100 p-2 rounded-lg shadow-lg max-w-4xl mx-auto mb-5 gap-4">
-            <!-- Image Section -->
-  <div class="flex-2 relative">
-      <div class="flex justify-center items-center rounded-lg border" style="width: 400px; height: 400px;">
-                        @if ($ad->creative_type == "IMAGE" )
-                            <div class="flex justify-center items-center mb-4 mt-4">
-                                <img src="{{ $ad->creative_url }}" alt="Ad Image" class="w-150 h-150 object-cover">
-                            </div>
-                        @elseif ($ad->creative_type == "VIDEO")
-                            <div class="flex justify-center items-center mb-4 mt-4">
-                                <video class=""  style="width: 400px; height: 400px;" controls>
-                                    <source src="{{ $ad->creative_url }}" type="video/mp4">
-                                    Your browser does not support the video tag.
-                                </video>
-                            </div>
-                        @endif
-       
-      </div>
-  </div>
 
+                          
 
-  <div class="flex-1 mt-6 md:mt-0 md:ml-6 border">
-    <div class="mb-4 mt-4 ml-8">
-      <p class="text-md text-gray-600">Ad copy</p>
-      <div x-data="{ isTruncated: true }">
-          <p x-bind:class="{ 'line-clamp-3': isTruncated }" x-on:click="isTruncated = !isTruncated" class="text-sm text-gray-700 cursor-pointer"  style="{{ isTextArabic($ad->copy) ? 'direction:rtl' : 'direction:ltr' }}" >
-              {!! cleanArabicText($ad->copy) !!}
-          </p>
-      </div>
-      <p class="text-md text-gray-600">Headline</p>
-      <h2 class="text-sm text-gray-700 mb-2"  style="{{ isTextArabic($ad->copy) ? 'direction:rtl' : 'direction:ltr' }}" >                                    
-        {!! cleanArabicText($ad->headline) !!}
-      </h2>
-      <p class="text-md text-gray-600">Description</p>
-      <p class="text-gray-800 line-clamp-3 mb-2">
-      {!! cleanArabicText($ad->description) !!}
-      </p>
-      <p class="text-md text-gray-600 mt-2">Links</p>
+<div class="flex flex-col md:flex-row p-2 rounded-lg shadow-lg max-w-4xl mx-auto mb-5 gap-4 ">
     
-      <div class="flex gap-4">
-          <a href="{{ $ad->page_url }}" 
-              target="_blank" 
-              class="bg-gray-300 text-black text-xs py-2 px-6 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
-              Page               
-          </a>
+            <!-- Image Section -->
+  <div class="relative bg-gray-10 lg:w-1/2 max-w-md">
+                <div class="rounded-lg p-2 bg-gray-100" >
+                            <div class="flex items-center mb-2">
+                                    <img src="{{$ad->page_picture}}" alt="Image" class="w-8 h-8 mr-2 rounded-full object-cover"> 
+                                    <h3 class="text-md font-semibold">
+                                        @php
+                                        $decodedString = json_decode('"' . $ad->page_name . '"');
+                                        echo $decodedString;
+                                        @endphp
+                                    </h3>
+                            </div>
+                            <div x-data="{ isTruncated: true }">
+        
+                                <p x-bind:class="{ 'line-clamp-3': isTruncated }" style="{{ isTextArabic($ad->copy) ? 'direction:rtl' : 'direction:ltr' }}"  x-on:click="isTruncated = !isTruncated" class="text-sm text-gray-700 cursor-pointer">
+                                    <!-- {{ $ad->copy }} -->
+                        
+                                    {!! cleanArabicText($ad->copy) !!}
+                                </p>
+                            </div>
+                        </div>
 
-          <a href="https://web.facebook.com/ads/library/?active_status=active&ad_type=all&country=DZ&is_targeted_country=false&media_type=all&search_type=page&view_all_page_id={{ $ad->page_id }}" 
-              target="_blank" 
-              class="bg-gray-300 text-black text-xs py-2 px-6 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
-              Ads               
-          </a>
-          <a href="https://www.facebook.com/ads/library/?id={{ $ad->url }}" 
-              target="_blank" 
-              class="bg-gray-300 text-black text-xs py-2 px-6 rounded hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400">
-              Product page               
-          </a>
-      </div>
+                     
+                        <div  class="flex items-center justify-center rounded mt-2 bg-gray-100">
+                            @if ($ad->creative_type == "IMAGE")
+                                <div class="flex justify-center items-center">
+                                    <img src="{{ $ad->creative_url }}" alt="Ad Image"  class=" object-cover">
+                                </div>
+                            @elseif ($ad->creative_type == "VIDEO")
+                                <div class="flex justify-center rounded items-center">
+                                    <video class="" controls>
+                                        <source src="{{ $ad->creative_url }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div>
+                            @endif
+                        </div>
 
-    </div>
-      
-   
+
+
+                       
+
+                        <div class="flex justify-between items-center bg-gray-100 rounded-lg gap-2 my-4" style=" width: 100%; overflow: hidden;">
+                                <!-- <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->headline}}</p>
+                                <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->description}}</p> -->
+                                <div style="width: 100%; overflow: hidden;">
+                                    <p class="text-md text-gray-500" 
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; 
+                                    {{ isTextArabic($ad->headline) ? 'direction: rtl; text-align: right;' : 'direction: ltr;' }}">@if($ad->headline == '')
+                                            @php
+                                            $decodedString = json_decode('"' . $ad->page_name . '"');
+                                            echo $decodedString; 
+                                            @endphp
+                                            @else
+                                            {!! cleanArabicText($ad->headline) !!}
+                                            @endif
+                                    </p>
+                                    <p class="text-sm text-gray-500" 
+                                    style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; 
+                                    {{ isTextArabic($ad->description) ? 'direction: rtl; text-align: right;' : 'direction: ltr;' }}">                                         
+                                        {!! cleanArabicText($ad->description) !!}
+
+                                    </p>
+                                </div>
+                                <div >
+                                    <a href="{{ empty($ad->url) ? $ad->page_url : $ad->url}}" target="_blank">
+                                    <button class="w-full bg-gray-200 text-md hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded-md"  style="white-space: nowrap;">{{$ad->cta}}</button>
+                                    </a>
+                                </div>
+                        </div>
+                        
+
+                       
+
   </div>
-</div>
-
-<div class="bg-gray-100 p-2 rounded-lg shadow-lg max-w-4xl mx-auto mb-5 ">
-
-    <h1 class="text-xl font-semibold mb-2 md:self-start">Product Tracking & Updates</h1>
-
-    <div class="flex flex-col md:flex-row gap-4">
 
 
-        <div class="flex-grow bg-white rounded-lg shadow dark:bg-gray-800 p-4 md:p-6">
-            <canvas id="myChart"></canvas>
-        </div>
+  <div class="mt-6 md:mt-0 md:ml-6 border w-full">
+    <div class="mb-4 mt-4 px-4">
+    
+                            <div class="mb-4">
 
-        <div class="bg-white shadow-md rounded-lg p-4 space-y-4 ml-auto">
+                            @if ($this->isTracked($ad->id))
+                                <button style="width: 100%" class="bg-green-500 text-white px-2 py-2 rounded font-semibold text-sm flex items-center justify-center gap-2">
+                                <x-heroicon-s-bookmark class="w-4 h-4" /> Saved to Spyder
+                                </button>
+                            @else
+                               
+                            <button wire:click="addSave({{ $ad->id }})" style="width: 100%" class="bg-gray-200 py-2 font-semibold border text-sm rounded flex items-center justify-center gap-2">
+                                <x-heroicon-o-bookmark class="w-4 h-4" /> Save to Spyder
+                            </button>
+                            @endif
+                            </div>
+                              
+                          
+
+                            <div  class="flex-grow bg-white border shadow rounded-lg shadow dark:bg-gray-800 p-4 md:p-6">
+                                <canvas id="myChart"></canvas>
+                            </div>
+
+                           
+
+        
+        <div class="bg-white shadow-md border rounded-lg p-4 space-y-4 ml-auto mt-4">
           <!-- Date Information -->
           <div class="space-y-1">
-              <div class="flex items-center gap-2 justify-between text-gray-700">
-                  <span class="flex items-center space-x-1">
-                      <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 3h-1V2h-2v1H8V2H6v1H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19V8h14v11H5zm14-13H5V5h14v1z"/>
-                      </svg>
-                      <span>Created at</span>
-                  </span>
-                  <span class="text-gray-900">
-                  {{ \Carbon\Carbon::createFromTimestamp($specific_ad->starting_date)->format('Y-m-d') }}
-                  </span>
-              </div>
-              <div class="flex items-center gap-2 justify-between text-gray-700">
+            <div class="flex items-center gap-2 justify-between text-gray-700">
                 <span class="flex items-center space-x-1">
                       <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M19 3h-1V2h-2v1H8V2H6v1H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19V8h14v11H5zm14-13H5V5h14v1z"/>
                       </svg>
                       <span>Active time</span>
-                  </span>
+                </span>
                   <span class="text-gray-900">
                   @php
                             // Get the current time
@@ -173,17 +239,31 @@
                             $cleanDiff = str_replace('after', '', $diff);
                 
                             echo $cleanDiff;
+                            
                   @endphp
                   </span>
                             
                           
               </div>
+
+              <div class="flex items-center gap-2 justify-between text-gray-700">
+                  <span class="flex items-center space-x-1">
+                      <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 3h-1V2h-2v1H8V2H6v1H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM5 19V8h14v11H5zm14-13H5V5h14v1z"/>
+                      </svg>
+                      <span>Created at</span>
+                  </span>
+                  <span class="text-gray-900">
+                  {{ \Carbon\Carbon::createFromTimestamp($specific_ad->starting_date)->format('Y-m-d') }}
+                  </span>
+              </div>
+           
               <div class="flex items-center gap-2 justify-between text-gray-700">
               <span class="flex items-center space-x-1">
                   <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M0 0h24v24H0z" fill="none"/><path d="M12 6c4.41 0 8-1.79 8-4H4c0 2.21 3.59 4 8 4zm0 2C7.48 8 0 9.79 0 12h24c0-2.21-7.48-4-12-4zm0 2c4.41 0 8 1.79 8 4H4c0-2.21 3.59-4 8-4z"/>
                   </svg>
-                  <span>Added</span>
+                  <span>First update</span>
               </span>
               <span id="firstDate" class="text-gray-900"></span>
               </div>
@@ -199,8 +279,14 @@
           </div>
         </div>
 
+     
+
     </div>
+      
+   
   </div>
+</div>
+
 
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -230,9 +316,12 @@
     data: {
       labels: labels,
       datasets: [{
-        label: '',
+        label: 'Active ads',
         data: counts,
-        borderWidth: 1
+        borderWidth: 1,
+        borderColor: '#441752',
+        
+
       }]
     },
     options: {
@@ -245,7 +334,6 @@
   });
 </script>
 @endscript
-
          
         </x-app.container>
     @endvolt

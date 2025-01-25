@@ -3,6 +3,8 @@
     use App\Models\Ad;
     use Livewire\Volt\Component;
     use Carbon\Carbon;
+    use Filament\Notifications\Notification;
+
 
     middleware('auth');
     name('ads');
@@ -31,16 +33,32 @@
         }
 
 
+
         
         public function mount()
         {
             $this->applyFilters();
         }
+
+        public $selected = 'Newest'; // Default selected option
+        public $sortOrder = 'desc';  // Default sort order
         
         public function applyFilters()
         {
             // Base query with all filters
-            $query = Ad::query()->orderBy('starting_date', 'desc');;
+            // $query = Ad::query()->orderBy('starting_date', 'desc');
+
+             // Base query with all filters
+        $query = Ad::query();
+
+        // Apply the sort order based on the selected option
+        if ($this->selected == 'Newest') {
+            $query->orderBy('starting_date', 'desc');
+        } elseif ($this->selected == 'Longest Running') {
+            $query->orderBy('starting_date', 'asc');
+        } elseif ($this->selected == 'Total Active Ads') {
+            $query->orderBy('collation_count', 'desc');
+        }
         
             // Apply filters dynamically
             if ($this->search) {
@@ -115,14 +133,41 @@
                     />
             </div>
 
+
+
+
+<!-- Hidden Input to Bind to Livewire Property -->
+<!-- <input type="hidden" wire:model.defer="selected" /> -->
+
+
+
 <!-- filters -->
 <form wire:submit.prevent="searchAds" @keydown.enter.prevent="return false;">
-    <div class="m-2 mb-4 lg:px-10">
-        <div class="rounded-xl border border-gray-200 bg-white p-6 pt-0 shadow-lg">
-            <div class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 ">
+
+
+
+
+<div x-data="{ showForm: false }" style="text-align:center">
+    <!-- Toggle Button -->
+    <button 
+        @click="showForm = !showForm" 
+        class="w-1/2 mb-4 border bg-white-200 text-gray-600 py-2 rounded-md text-md font-semibold shadow-md"
+    >
+        Add Filters
+    </button>
+
+    <!-- Filters Form -->
+    <div x-show="showForm" x-transition class="mt-4">
+
+
+    <div class="border px-8 mb-4">
+
+   
+
+            <div class="mt-8 grid gap-4 grid-cols-2  md:grid-cols-2 lg:grid-cols-5 xl:grid-cols-5 ">
                 <div class="flex flex-col">
                     <label for="name" class="text-stone-600 text-sm font-medium">Search</label>
-                    <input wire:model.defer="search" type="text" id="name" placeholder="'Veste'" class="mt-2 block w-full rounded-md border border-gray-200 px-2 py-2 shadow-sm outline-none focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
+                    <input wire:model.defer="search" type="text" id="name" placeholder="'للطلب'" class="mt-2 block w-full rounded-md border border-gray-200 px-2 py-2 shadow-sm outline-none focus:border-blue-500 focus:ring focus:ring-blue-200 focus:ring-opacity-50" />
                 </div>
 
                 <div class="flex flex-col">
@@ -142,10 +187,7 @@
                         <option value="send message">Send message</option>
                     </select>
                 </div>
-            </div>
 
-            <div class="m-2 mt-4 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-                <!-- date -->
                 <div class="flex flex-col">
                     <label for="status" class="text-stone-600 text-sm font-medium">Creation date</label>
                         <div x-data="{
@@ -153,15 +195,15 @@
                                         endDate: @entangle('endDate'),
                                         open: false
                                     }"
-                                    class="relative inline-block text-sm mt-2"
+                                    class="relative inline-block text-sm mt-2 w-full "
                                 >
                                     <!-- Datepicker Button -->
                                     <button 
                                         @click="open = !open"
-                                        class="width-text-gray-700 font-medium border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        class="w-full width-text-gray-700 font-medium border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     >
-                                        <span x-text="startDate ? startDate : 'Start Date'"></span> - 
-                                        <span x-text="endDate ? endDate : 'End Date'"></span>
+                                        <span x-text="startDate ? startDate : 'Start'"></span> - 
+                                        <span x-text="endDate ? endDate : 'End'"></span>
                                     </button>
 
                                     <!-- Datepicker Pop-up -->
@@ -171,8 +213,8 @@
                                         x-transition
                                         class="absolute z-10 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg"
                                     >
-                                        <div class="flex p-4 space-x-4 gap-4">
-                                            <div class="w-1/2">
+                                        <div class="p-4 space-x-4 gap-4">
+                                            <div class="w-full">
                                                 <label class="block text-xs font-medium text-gray-600">Start Date</label>
                                                 <input 
                                                     wire:model.defer="start_date" 
@@ -181,7 +223,7 @@
                                                     class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                 />
                                             </div>
-                                            <div class="w-1/2">
+                                            <div class="w-full">
                                                 <label class="block text-xs font-medium text-gray-600">End Date</label>
                                                 <input 
                                                     wire:model.defer="end_date" 
@@ -195,9 +237,7 @@
                                     </div>
                         </div>
                 </div>
-                <!-- date -->
-
-                <!-- active time -->
+                
                 <div class="flex flex-col">
                     <label for="status" class="text-stone-600 text-sm font-medium">Active ads</label>
 
@@ -230,29 +270,101 @@
                     </div>
 
                 </div>
-                <!-- active time -->
-
-                <div class="mt-6 grid w-full grid-cols-2 justify-end space-x-5 md:flex">
-                    <button type="reset" class="active:scale-95 rounded-lg bg-gray-200 px-8 py-2 font-medium text-gray-600 outline-none focus:ring hover:opacity-90">Reset</button>
-                    <button class="active:scale-95 rounded-lg bg-black px-8 py-2 font-medium text-white outline-none focus:ring hover:opacity-90">Search</button>
-                </div>
 
             </div>
 
-        </div>
+            <div class="flex flex-col my-4">
+                    <!-- <button type="reset" class="active:scale-95 rounded-lg bg-gray-200 px-8 py-2 font-medium text-gray-600 outline-none focus:ring hover:opacity-90">Reset</button> -->
+                    <button class="active:scale-95 bg-gray-200 font-semibold border rounded-lg px-8 py-2 font-medium outline-none focus:ring hover:opacity-90 flex items-center justify-center gap-2">                     
+                        <x-heroicon-s-magnifying-glass class="w-4 h-4" /> Search
+                     </button>
+            </div>
+
+</div>
+</div>
+</div>
+
+<div x-data="{ open: false, selected: @entangle('selected') }" class="relative inline-block">
+  <!-- Dropdown Button -->
+  <button 
+    @click="open = !open" 
+    class="bg-gray-100 border px-4 py-1 rounded flex items-center gap-2"
+  >
+    <span x-text="selected"></span>
+    <x-heroicon-s-chevron-down class="w-4 h-4" />
+  </button>
+
+  <!-- Dropdown Menu -->
+  <div 
+    x-show="open" 
+    @click.away="open = false" 
+    class="absolute left-0 mt-2 bg-white border rounded shadow-lg w-48"
+    x-transition
+  >
+    <!-- Dropdown Items -->
+    <div 
+      class="px-4 py-2 hover:bg-gray-100 cursor-pointer" 
+      @click="selected = 'Newest'; open = false; $wire.applyFilters();"
+    >
+      Newest
     </div>
+    <div 
+      class="px-4 py-2 hover:bg-gray-100 cursor-pointer" 
+      @click="selected = 'Longest Running'; open = false; $wire.applyFilters();"
+    >
+      Longest Running
+    </div>
+    <div 
+      class="px-4 py-2 hover:bg-gray-100 cursor-pointer" 
+      @click="selected = 'Total Active Ads'; open = false; $wire.applyFilters();"
+    >
+        Total Active Ads
+    </div>
+  </div>
+</div>
+
+<!-- Hidden Input to Bind to Livewire Property -->
+<input type="hidden" wire:model="selected" />
+
+
+
 </form>
 
 
             <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-4 gap-4">
                 @foreach ($ads as $ad)
 
-                    <div class="bg-gray-100 rounded-lg p-4">
-                        <div class="flex justify-between items-center bg-gray-100 rounded-lg" style="width: 100%; overflow: hidden;">
+                <div class="border rounded-lg mt-4">
+                        <!-- <div class="flex justify-between items-center bg-gray-100 rounded-lg" style="width: 100%; overflow: hidden;">
                         <p class="text-sm text-gray-500">Started running on: {{ \Carbon\Carbon::createFromTimestamp($ad->starting_date)->toDateString() }}</p>
-                        </div>
-                        <p class="text-sm text-gray-500">Total active time: 
+                        </div> -->
+                        
 
+                      
+
+
+                    <div class="border-b bg-gray-100 border-gray-300 p-2 flex flex-col">
+
+                    <div>
+                    <span 
+                        class="flex items-center gap-1 px-2 border bg-green-100 text-green-700 font-semibold text-xs rounded-full"
+                        style="display: inline-flex; align-items: center;">
+                        <x-heroicon-o-arrow-trending-up class="w-4 h-4" />
+                        New
+                    </span>
+                    </div>
+
+                        <div>
+                      
+                        <span style="display: inline-block; vertical-align: middle;">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" style="color: #6B7280;">
+                                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" />
+                                <line x1="12" y1="6" x2="12" y2="12" stroke="currentColor" stroke-width="2" />
+                                <line x1="12" y1="12" x2="16" y2="14" stroke="currentColor" stroke-width="2" />
+                            </svg>
+                        </span>
+
+                        <span style="display: inline-block; vertical-align: middle;" class="text-sm text-gray-500">
                             @php
                             // Get the current time
                             $currentTime = \Carbon\Carbon::now();
@@ -264,17 +376,25 @@
                             $diff = $currentTime->diffForHumans($startingDate);
 
                             $cleanDiff = str_replace('after', '', $diff);
-                
-                            echo $cleanDiff;
-                            
-                            @endphp
-                
 
-                        </p>
-                        <div class ="flex">
-                            <p class="text-lg font-semibold mb-2 text-blue-500 whitespace-nowrap">{{$ad->collation_count}} active ads
-                            </p>
-                            <p class="text-sm font-semibold text-red-500 ml-4 mt-1">
+                            echo $cleanDiff;
+                            echo "running"
+
+                            @endphp
+                        </span>
+                        </div>
+
+                        <div>
+                        <span style="display: inline-block; vertical-align: middle;" class="">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                            <circle cx="8" cy="8" r="6" fill="green" />
+                            </svg>
+                        </span>
+
+                        <span style="display: inline-block; vertical-align: middle;" class="text-sm text-gray-500">
+                            {{$ad->collation_count}} active ads
+                            
+                            <!-- <p class="text-sm font-semibold text-red-500 ml-4 mt-1">
                                 
                                     @php
                                     $countsData = '[' . $ad->count . ']'; // Wrap the data in square brackets to make it valid JSON
@@ -300,18 +420,34 @@
                                     }
                                     @endphp
 
-                            </p>
-                         </div>
-                                 
+                            </p> -->
+                        </span>
 
                        
+                        </div>
+
+                       
+                            
+                      
 
 
-                        <button wire:click="goToAdDetails({{ $ad->library_id }})" class="text-md bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 w-full mb-2 rounded-md">
-                            See creative details & Tracking
-                        </button>
+                        <div style="width:100%; text-align:center; " class="mt-2 text-md border bg-gray-200 rounded flex items-center justify-center">
+                            <button 
+                                wire:click="goToAdDetails({{ $ad->library_id }})" 
+                                class="text-black border-b px-2 py-1 rounded font-semibold text-md flex items-center justify-center gap-2"
+                            >
+                            <x-heroicon-s-eye class="w-4 h-4" /> Tracking & Insights
+                            </button>
+</div>
 
-                        <div class="bg-gray-100 rounded-lg">
+
+
+                    </div>
+                    
+                        
+
+                        <div class="rounded-lg p-2 bg-gray-100">
+
                             <div class="flex items-center mb-2">
                                     <img src="{{$ad->page_picture}}" alt="Image" class="w-8 h-8 mr-2 rounded-full object-cover"> 
                                     <h3 class="text-md font-semibold">
@@ -332,14 +468,14 @@
                         </div>
 
                      
-                        <div style="height: 250px;" class="flex items-center justify-center mb-4 mt-4">
+                        <div  class="flex items-center justify-center rounded mt-2 bg-gray-100" style="max-height:340px;">
                             @if ($ad->creative_type == "IMAGE")
                                 <div class="flex justify-center items-center">
-                                    <img src="{{ $ad->creative_url }}" alt="Ad Image"  class=" object-cover"  style="max-height: 250px; width: auto;">
+                                    <img src="{{ $ad->creative_url }}" alt="Ad Image"  class=" object-cover"  style="max-height: 340px"; width: auto;">
                                 </div>
                             @elseif ($ad->creative_type == "VIDEO")
-                                <div class="flex justify-center items-center">
-                                    <video class="" width="150" height="150" style="max-height: 250px; width: auto;" controls >
+                                <div class="flex justify-center rounded items-center">
+                                    <video class="" controls style="max-height:340px;">
                                         <source src="{{ $ad->creative_url }}" type="video/mp4">
                                         Your browser does not support the video tag.
                                     </video>
@@ -351,7 +487,7 @@
 
                        
 
-                        <div class="flex justify-between items-center bg-gray-100 rounded-lg gap-2" style="width: 100%; overflow: hidden;">
+                        <div class="flex justify-between items-center bg-gray-100 rounded-lg gap-2 py-2 px-2" style="width: 100%; overflow: hidden;">
                                 <!-- <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->headline}}</p>
                                 <p class="text-sm text-gray-500" style="white-space: nowrap; width: 100%; overflow: hidden; text-overflow: ellipsis;">{{$ad->description}}</p> -->
                                 <div style="width: 100%; overflow: hidden;">
@@ -374,15 +510,14 @@
                                     </p>
                                 </div>
                                 <div>
-                                <a href="{{ empty($ad->url) ? $ad->page_url : $ad->url}}" target="_blank">
-                                <button class="w-full bg-gray-200 text-xs hover:bg-gray-300 text-gray-700 font-medium py-2 px-2 rounded-md"  style="white-space: nowrap;">{{$ad->cta}}</button>
-                                </a>
-
-                                
+                                    <a href="{{ empty($ad->url) ? $ad->page_url : $ad->url}}" target="_blank">
+                                    <button class="w-full bg-gray-200 text-xs hover:bg-gray-300 text-gray-700 font-medium py-2 px-2 rounded-md"  style="white-space: nowrap;">{{$ad->cta}}</button>
+                                    </a>
                                 </div>
                         </div>
                         
 
+                       
 
                        
                     </div>
@@ -394,6 +529,7 @@
 
                         <div x-intersect="$wire.loadmore" class ="border-4 h-60">
                         </div>
+                        
         
 
         </x-app.container>

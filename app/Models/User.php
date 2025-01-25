@@ -73,5 +73,11 @@ public function projects()
     return $this->hasMany(Project::class);
 }
 
+    
+public function ads()
+{
+    return $this->belongsToMany(Ad::class, 'user_ad');
+}
+
 
 }
